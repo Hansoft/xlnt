@@ -43,9 +43,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 #include <iterator> // for std::back_inserter
 #include <stdexcept>
 #include <string>
+#include "zlib.h"
 
 #include <xlnt/utils/exceptions.hpp>
-#include <detail/serialization/miniz.hpp>
 #include <detail/serialization/vector_streambuf.hpp>
 #include <detail/serialization/zstream.hpp>
 
