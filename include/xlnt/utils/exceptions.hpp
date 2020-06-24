@@ -111,6 +111,7 @@ public:
     virtual ~invalid_sheet_title();
 };
 
+/* Compile error clang
 /// <summary>
 /// Exception when a referenced number format is not in the stylesheet.
 /// </summary>
@@ -127,6 +128,7 @@ public:
     /// </summary>
     virtual ~missing_number_format();
 };
+*/
 
 /// <summary>
 /// Exception for trying to open a non-XLSX file.
