@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Thomas Fussell
+// Copyright (c) 2014-2020 Thomas Fussell
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,30 +24,19 @@
 #pragma once
 
 #include <xlnt/xlnt_config.hpp>
+#include <algorithm>
+#include <cassert>
 #include <cmath>
+#include <cstddef>
 #include <limits>
 #include <sstream>
 #include <type_traits>
-#include <cassert>
-#include <algorithm>
+
+#undef min
+#undef max
 
 namespace xlnt {
 namespace detail {
-
-/// <summary>
-/// Takes in any number and outputs a string form of that number which will
-/// serialise and deserialise without loss of precision
-/// </summary>
-template <typename Number>
-std::string serialize_number_to_string(Number num)
-{
-    // more digits and excel won't match
-    constexpr int Excel_Digit_Precision = 15; //sf
-    std::stringstream ss;
-    ss.precision(Excel_Digit_Precision);
-    ss << num;
-    return ss.str();
-}
 
 /// <summary>
 /// constexpr abs
@@ -56,7 +45,7 @@ template <typename Number>
 constexpr Number abs(Number val)
 {
     return (val < Number{0}) ? -val : val;
-};
+}
 
 /// <summary>
 /// constexpr max
@@ -117,45 +106,88 @@ bool float_equals(const LNumber &lhs, const RNumber &rhs,
     return ((lhs + scaled_fuzz) >= rhs) && ((rhs + scaled_fuzz) >= lhs);
 }
 
-struct number_converter
+class number_serialiser
 {
-    explicit number_converter()
-        : should_convert_to_comma(std::use_facet<std::numpunct<char>>(std::locale{}).decimal_point() == ',')
+    static constexpr int Excel_Digit_Precision = 15; //sf
+    bool should_convert_comma;
+
+    static void convert_comma_to_pt(char *buf, int len)
+    {
+        char *buf_end = buf + len;
+        char *decimal = std::find(buf, buf_end, ',');
+        if (decimal != buf_end)
+        {
+            *decimal = '.';
+        }
+    }
+
+    static void convert_pt_to_comma(char *buf, size_t len)
+    {
+        char *buf_end = buf + len;
+        char *decimal = std::find(buf, buf_end, '.');
+        if (decimal != buf_end)
+        {
+            *decimal = ',';
+        }
+    }
+
+public:
+    explicit number_serialiser()
+        : should_convert_comma(localeconv()->decimal_point[0] == ',')
     {
     }
 
-    double stold(std::string &s) const noexcept
+    // for printing to file.
+    // This matches the output format of excel irrespective of current locale
+    std::string serialise(double d) const
+    {
+        char buf[30];
+        int len = snprintf(buf, sizeof(buf), "%.15g", d);
+        if (should_convert_comma)
+        {
+            convert_comma_to_pt(buf, len);
+        }
+        return std::string(buf, static_cast<size_t>(len));
+    }
+
+    // replacement for std::to_string / s*printf("%f", ...)
+    // behaves same irrespective of locale
+    std::string serialise_short(double d) const
+    {
+        char buf[30];
+        int len = snprintf(buf, sizeof(buf), "%f", d);
+        if (should_convert_comma)
+        {
+            convert_comma_to_pt(buf, len);
+        }
+        return std::string(buf, static_cast<size_t>(len));
+    }
+
+    double deserialise(const std::string &s, ptrdiff_t *len_converted) const
     {
         assert(!s.empty());
-        if (should_convert_to_comma)
+        assert(len_converted != nullptr);
+        char *end_of_convert;
+        if (!should_convert_comma)
         {
-            auto decimal_pt = std::find(s.begin(), s.end(), '.');
-            if (decimal_pt != s.end())
-            {
-                *decimal_pt = ',';
-            }
+            double d = strtod(s.c_str(), &end_of_convert);
+            *len_converted = end_of_convert - s.c_str();
+            return d;
         }
-        return strtod(s.c_str(), nullptr);
+        char buf[30];
+        assert(s.size() < sizeof(buf));
+        auto copy_end = std::copy(s.begin(), s.end(), buf);
+        convert_pt_to_comma(buf, static_cast<size_t>(copy_end - buf));
+        double d = strtod(buf, &end_of_convert);
+        *len_converted = end_of_convert - buf;
+        return d;
     }
 
-    double stold(const std::string &s) const
+    double deserialise(const std::string &s) const
     {
-        assert(!s.empty());
-        if (!should_convert_to_comma)
-        {
-            return strtod(s.c_str(), nullptr);
-        }
-        std::string copy(s);
-        auto decimal_pt = std::find(copy.begin(), copy.end(), '.');
-        if (decimal_pt != copy.end())
-        {
-            *decimal_pt = ',';
-        }
-        return strtod(copy.c_str(), nullptr);
+        ptrdiff_t ignore;
+        return deserialise(s, &ignore);
     }
-
-private:
-    bool should_convert_to_comma = false;
 };
 
 } // namespace detail

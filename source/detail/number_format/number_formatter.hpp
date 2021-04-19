@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Thomas Fussell
+// Copyright (c) 2014-2020 Thomas Fussell
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@
 #include <vector>
 
 #include <xlnt/utils/datetime.hpp>
+#include <xlnt/utils/numeric.hpp>
 
 namespace xlnt {
 namespace detail {
@@ -691,6 +692,7 @@ private:
     number_format_parser parser_;
     std::vector<format_code> format_;
     xlnt::calendar calendar_;
+    xlnt::detail::number_serialiser serialiser_;
 };
 
 } // namespace detail

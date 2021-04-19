@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Thomas Fussell
+// Copyright (c) 2014-2020 Thomas Fussell
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,8 +26,10 @@
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
+#include <xlnt/utils/numeric.hpp>
 #include <detail/constants.hpp>
 #include <detail/external/include_libstudxml.hpp>
 
@@ -168,19 +170,48 @@ private:
 
     void write_namespace(const std::string &ns, const std::string &prefix);
 
-    template<typename T>
+    // std::string attribute name
+    // not integer or float type
+    template <typename T, typename = typename std::enable_if<!std::is_convertible<T, double>::value>::type>
     void write_attribute(const std::string &name, T value)
     {
         current_part_serializer_->attribute(name, value);
     }
 
-    template<typename T>
+    template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type* = nullptr>
+    void write_attribute(const std::string &name, T value)
+    {
+        current_part_serializer_->attribute(name, converter_.serialise(value));
+    }
+
+    template <typename T, typename std::enable_if<std::is_integral<T>::value, T>::type* = nullptr>
+    void write_attribute(const std::string &name, T value)
+    {
+        current_part_serializer_->attribute(name, std::to_string(value));
+    }
+
+    // qname attribute name
+    // not integer or float type
+    template <typename T, typename = typename std::enable_if<!std::is_convertible<T, double>::value>::type>
     void write_attribute(const xml::qname &name, T value)
     {
         current_part_serializer_->attribute(name, value);
     }
 
-    template<typename T>
+    template <typename T, typename std::enable_if<std::is_floating_point<T>::value, T>::type* = nullptr>
+    void write_attribute(const xml::qname &name, T value)
+    {
+        current_part_serializer_->attribute(name, converter_.serialise(value));
+    }
+
+    template <typename T, typename std::enable_if<std::is_integral<T>::value, T>::type* = nullptr>
+    void write_attribute(const xml::qname &name, T value)
+    {
+        current_part_serializer_->attribute(name, std::to_string(value));
+    }
+
+
+    template <typename T>
     void write_characters(T characters, bool preserve_whitespace = false)
     {
         if (preserve_whitespace)
@@ -208,6 +239,7 @@ private:
     detail::cell_impl *current_cell_;
 
     detail::worksheet_impl *current_worksheet_;
+    detail::number_serialiser converter_;
 };
 
 } // namespace detail

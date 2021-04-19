@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Thomas Fussell
+// Copyright (c) 2014-2020 Thomas Fussell
 // Copyright (c) 2010-2015 openpyxl
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -358,6 +358,12 @@ private:
     /// </summary>
     bool in_element(const xml::qname &name);
 
+    /// <summary>
+    /// Throws an exception or skips remaining elements depending on
+    /// the value of THROW_ON_INVALID_XML.
+    /// </summary>
+    void unexpected_element(const xml::qname &name);
+
     // Properties
 
 	/// <summary>
@@ -407,10 +413,8 @@ private:
 
     std::unique_ptr<detail::cell_impl> streaming_cell_;
 
-    detail::cell_impl *current_cell_;
-
     detail::worksheet_impl *current_worksheet_;
-    number_converter converter_;
+    number_serialiser converter_;
 };
 
 } // namespace detail

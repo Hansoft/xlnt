@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Thomas Fussell
+// Copyright (c) 2014-2020 Thomas Fussell
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,8 +26,9 @@
 #pragma clang diagnostic ignored "-Wweak-vtables"
 #pragma clang diagnostic ignored "-Wextra-semi"
 #pragma clang diagnostic ignored "-Wdeprecated"
-#include <xml/content>
-#include <xml/parser>
-#include <xml/qname>
-#include <xml/serializer>
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#include <libstudxml/content.hxx>
+#include <libstudxml/parser.hxx>
+#include <libstudxml/qname.hxx>
+#include <libstudxml/serializer.hxx>
 #pragma clang diagnostic pop

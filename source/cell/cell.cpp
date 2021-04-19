@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Thomas Fussell
+// Copyright (c) 2014-2020 Thomas Fussell
 // Copyright (c) 2010-2015 openpyxl
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,11 +26,6 @@
 #include <cmath>
 #include <sstream>
 
-#include <detail/implementations/cell_impl.hpp>
-#include <detail/implementations/format_impl.hpp>
-#include <detail/implementations/hyperlink_impl.hpp>
-#include <detail/implementations/stylesheet.hpp>
-#include <detail/implementations/worksheet_impl.hpp>
 #include <xlnt/cell/cell.hpp>
 #include <xlnt/cell/cell_reference.hpp>
 #include <xlnt/cell/comment.hpp>
@@ -54,18 +49,24 @@
 #include <xlnt/utils/timedelta.hpp>
 #include <xlnt/workbook/workbook.hpp>
 #include <xlnt/worksheet/column_properties.hpp>
+#include <xlnt/worksheet/phonetic_pr.hpp>
 #include <xlnt/worksheet/row_properties.hpp>
 #include <xlnt/worksheet/worksheet.hpp>
-#include <xlnt/worksheet/phonetic_pr.hpp>
+#include <detail/implementations/cell_impl.hpp>
+#include <detail/implementations/format_impl.hpp>
+#include <detail/implementations/hyperlink_impl.hpp>
+#include <detail/implementations/stylesheet.hpp>
+#include <detail/implementations/worksheet_impl.hpp>
+#include <xlnt/utils/numeric.hpp>
 
 namespace {
 
 std::pair<bool, double> cast_numeric(const std::string &s)
 {
-    auto str_end = static_cast<char *>(nullptr);
-    auto result = std::strtod(s.c_str(), &str_end);
-
-    return (str_end != s.c_str() + s.size())
+    xlnt::detail::number_serialiser ser;
+    ptrdiff_t len_convert;
+    double result = ser.deserialise(s, &len_convert);
+    return (len_convert != static_cast<ptrdiff_t>(s.size()))
         ? std::make_pair(false, 0.0)
         : std::make_pair(true, result);
 }
@@ -108,7 +109,7 @@ std::pair<bool, xlnt::time> cast_time(const std::string &s)
     }
 
     std::vector<double> numeric_components;
-
+    xlnt::detail::number_serialiser ser;
     for (auto component : time_components)
     {
         if (component.empty() || (component.substr(0, component.find('.')).size() > 2))
@@ -123,9 +124,7 @@ std::pair<bool, xlnt::time> cast_time(const std::string &s)
                 return {false, result};
             }
         }
-
-        auto without_leading_zero = component.front() == '0' ? component.substr(1) : component;
-        auto numeric = std::stod(without_leading_zero);
+        auto numeric = ser.deserialise(component);
 
         numeric_components.push_back(numeric);
     }
@@ -155,7 +154,7 @@ namespace xlnt {
 
 const std::unordered_map<std::string, int> &cell::error_codes()
 {
-    static const auto *codes = new std::unordered_map<std::string, int>{
+    static const auto codes = std::unordered_map<std::string, int>{
         {"#NULL!", 0},
         {"#DIV/0!", 1},
         {"#VALUE!", 2},
@@ -164,7 +163,7 @@ const std::unordered_map<std::string, int> &cell::error_codes()
         {"#NUM!", 5},
         {"#N/A!", 6}};
 
-    return *codes;
+    return codes;
 }
 
 std::string cell::check_string(const std::string &to_check)
@@ -199,7 +198,7 @@ cell::cell(detail::cell_impl *d)
 
 bool cell::garbage_collectible() const
 {
-    return !(has_value() || is_merged() || phonetics_visible() || has_formula() || has_format() || has_hyperlink());
+    return d_->is_garbage_collectible();
 }
 
 void cell::value(std::nullptr_t)
@@ -411,7 +410,7 @@ void cell::hyperlink(const std::string &url, const std::string &display)
     }
 }
 
-void cell::hyperlink(xlnt::cell target, const std::string& display)
+void cell::hyperlink(xlnt::cell target, const std::string &display)
 {
     // TODO: should this computed value be a method on a cell?
     const auto cell_address = target.worksheet().title() + "!" + target.reference().to_string();
@@ -439,7 +438,7 @@ void cell::hyperlink(xlnt::range target, const std::string &display)
     d_->hyperlink_ = detail::hyperlink_impl();
     d_->hyperlink_.get().relationship = xlnt::relationship("", relationship_type::hyperlink,
         uri(""), uri(range_address), target_mode::internal);
-    
+
     // if a value is already present, the display string is ignored
     if (has_value())
     {

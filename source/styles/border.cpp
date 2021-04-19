@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Thomas Fussell
+// Copyright (c) 2014-2020 Thomas Fussell
 // Copyright (c) 2010-2015 openpyxl
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -94,11 +94,11 @@ border::border()
 
 const std::vector<xlnt::border_side> &border::all_sides()
 {
-    static auto *sides = new std::vector<xlnt::border_side>{xlnt::border_side::start, xlnt::border_side::end,
+    static auto sides = std::vector<xlnt::border_side>{xlnt::border_side::start, xlnt::border_side::end,
         xlnt::border_side::top, xlnt::border_side::bottom, xlnt::border_side::diagonal, xlnt::border_side::vertical,
         xlnt::border_side::horizontal};
 
-    return *sides;
+    return sides;
 }
 
 optional<border::border_property> border::side(border_side s) const

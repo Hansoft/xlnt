@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Thomas Fussell
+// Copyright (c) 2014-2020 Thomas Fussell
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,9 @@
 
 #include <limits>
 
-#include <detail/constants.hpp>
 #include <xlnt/xlnt_config.hpp>
 #include <xlnt/utils/exceptions.hpp>
+#include <detail/constants.hpp>
 
 namespace xlnt {
 
@@ -122,8 +122,8 @@ const path constants::part_shared_strings()
 
 const std::unordered_map<std::string, std::string> &constants::namespaces()
 {
-    static const std::unordered_map<std::string, std::string> *namespaces =
-        new std::unordered_map<std::string, std::string>{
+    static const std::unordered_map<std::string, std::string> namespaces =
+        std::unordered_map<std::string, std::string>{
             {"spreadsheetml", "http://schemas.openxmlformats.org/spreadsheetml/2006/main"},
             {"content-types", "http://schemas.openxmlformats.org/package/2006/content-types"},
             {"relationships", "http://schemas.openxmlformats.org/package/2006/relationships"},
@@ -155,10 +155,9 @@ const std::unordered_map<std::string, std::string> &constants::namespaces()
             {"a", "http://schemas.openxmlformats.org/drawingml/2006/main"},
             {"xdr", "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing"},
 
-            {"loext", "http://schemas.libreoffice.org/"}
-        };
+            {"loext", "http://schemas.libreoffice.org/"}};
 
-    return *namespaces;
+    return namespaces;
 }
 
 const std::string &constants::ns(const std::string &id)

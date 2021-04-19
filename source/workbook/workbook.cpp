@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Thomas Fussell
+// Copyright (c) 2014-2020 Thomas Fussell
 // Copyright (c) 2010-2015 openpyxl
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -414,7 +414,11 @@ workbook workbook::empty()
     wb.extended_property(xlnt::extended_property::hyperlinks_changed, false);
     wb.extended_property(xlnt::extended_property::app_version, "15.0300");
 
-    auto file_version = detail::workbook_impl::file_version_t{"xl", 6, 6, 26709};
+    detail::workbook_impl::file_version_t file_version;
+    file_version.app_name = "xl";
+    file_version.last_edited = 6;
+    file_version.lowest_edited = 6;
+    file_version.rup_build = 26709;
     wb.d_->file_version_ = file_version;
 
     xlnt::workbook_view wb_view;
@@ -681,6 +685,11 @@ worksheet workbook::sheet_by_index(std::size_t index)
 
 const worksheet workbook::sheet_by_index(std::size_t index) const
 {
+    if (index >= d_->worksheets_.size())
+    {
+        throw invalid_parameter();
+    }
+
     auto iter = d_->worksheets_.begin();
 
     for (std::size_t i = 0; i < index; ++i, ++iter)
@@ -714,6 +723,16 @@ const worksheet workbook::sheet_by_id(std::size_t id) const
     }
 
     throw key_not_found();
+}
+
+bool workbook::sheet_hidden_by_index(std::size_t index) const
+{
+    if (index >= d_->sheet_hidden_.size())
+    {
+        throw invalid_parameter();
+    }
+
+    return d_->sheet_hidden_.at(index);
 }
 
 worksheet workbook::active_sheet()
@@ -1034,7 +1053,7 @@ void workbook::load(const std::wstring &filename, const std::string &password)
 void workbook::remove_sheet(worksheet ws)
 {
     auto match_iter = std::find_if(d_->worksheets_.begin(), d_->worksheets_.end(),
-      [=](detail::worksheet_impl &comp) { return &comp == ws.d_; });
+        [=](detail::worksheet_impl &comp) { return &comp == ws.d_; });
 
     if (match_iter == d_->worksheets_.end())
     {
@@ -1348,32 +1367,25 @@ const manifest &workbook::manifest() const
     return d_->manifest_;
 }
 
-const std::map<std::size_t, rich_text> &workbook::shared_strings_by_id() const
+const rich_text &workbook::shared_strings(std::size_t index) const
 {
-    return d_->shared_strings_values_;
-}
-
-const rich_text& workbook::shared_strings(std::size_t index) const
-{
-    auto it = d_->shared_strings_values_.find(index);
-
-    if (it != d_->shared_strings_values_.end())
+    if (index < d_->shared_strings_values_.size())
     {
-        return it->second;
+        return d_->shared_strings_values_.at(index);
     }
 
     static rich_text empty;
     return empty;
 }
 
-std::unordered_map<rich_text, std::size_t, rich_text_hash> &workbook::shared_strings()
+std::vector<rich_text> &workbook::shared_strings()
 {
-    return d_->shared_strings_ids_;
+    return d_->shared_strings_values_;
 }
 
-const std::unordered_map<rich_text, std::size_t, rich_text_hash> &workbook::shared_strings() const
+const std::vector<rich_text> &workbook::shared_strings() const
 {
-    return d_->shared_strings_ids_;
+    return d_->shared_strings_values_;
 }
 
 std::size_t workbook::add_shared_string(const rich_text &shared, bool allow_duplicates)
@@ -1392,7 +1404,7 @@ std::size_t workbook::add_shared_string(const rich_text &shared, bool allow_dupl
 
     auto sz = d_->shared_strings_ids_.size();
     d_->shared_strings_ids_[shared] = sz;
-    d_->shared_strings_values_[sz] = shared;
+    d_->shared_strings_values_.push_back(shared);
 
     return sz;
 }

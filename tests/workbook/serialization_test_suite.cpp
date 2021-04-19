@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Thomas Fussell
+// Copyright (c) 2014-2020 Thomas Fussell
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,28 +23,28 @@
 
 #include <iostream>
 
+#include <xlnt/cell/cell.hpp>
 #include <xlnt/cell/comment.hpp>
 #include <xlnt/cell/hyperlink.hpp>
-#include <xlnt/cell/cell.hpp>
-#include <xlnt/styles/font.hpp>
-#include <xlnt/styles/style.hpp>
+#include <xlnt/styles/border.hpp>
 #include <xlnt/styles/fill.hpp>
+#include <xlnt/styles/font.hpp>
 #include <xlnt/styles/format.hpp>
 #include <xlnt/styles/number_format.hpp>
-#include <xlnt/styles/border.hpp>
+#include <xlnt/styles/style.hpp>
 #include <xlnt/utils/date.hpp>
 #include <xlnt/utils/datetime.hpp>
 #include <xlnt/utils/time.hpp>
 #include <xlnt/utils/timedelta.hpp>
 #include <xlnt/utils/variant.hpp>
+#include <xlnt/workbook/metadata_property.hpp>
 #include <xlnt/workbook/streaming_workbook_reader.hpp>
 #include <xlnt/workbook/streaming_workbook_writer.hpp>
 #include <xlnt/workbook/workbook.hpp>
-#include <xlnt/workbook/metadata_property.hpp>
 #include <xlnt/worksheet/column_properties.hpp>
+#include <xlnt/worksheet/header_footer.hpp>
 #include <xlnt/worksheet/row_properties.hpp>
 #include <xlnt/worksheet/sheet_format_properties.hpp>
-#include <xlnt/worksheet/header_footer.hpp>
 #include <xlnt/worksheet/worksheet.hpp>
 #include <detail/cryptography/xlsx_crypto_consumer.hpp>
 #include <detail/serialization/vector_streambuf.hpp>
@@ -91,6 +91,11 @@ public:
         register_test(test_streaming_read);
         register_test(test_streaming_write);
         register_test(test_load_save_german_locale);
+        register_test(test_Issue445_inline_str_load);
+        register_test(test_Issue445_inline_str_streaming_read);
+        register_test(test_Issue492_stream_empty_row);
+        register_test(test_Issue503_external_link_load);
+        register_test(test_formatting);
     }
 
     bool workbook_matches_file(xlnt::workbook &wb, const xlnt::path &file)
@@ -712,9 +717,93 @@ public:
 
     void test_load_save_german_locale()
     {
-       /* std::locale current(std::locale::global(std::locale("de-DE")));
+        /* std::locale current(std::locale::global(std::locale("de-DE")));
         test_round_trip_rw_custom_heights_widths();
         std::locale::global(current);*/
     }
+
+    void test_Issue445_inline_str_load()
+    {
+        xlnt::workbook wb;
+        wb.load(path_helper::test_file("Issue445_inline_str.xlsx"));
+        auto ws = wb.active_sheet();
+        auto cell = ws.cell("A1");
+        xlnt_assert_equals(cell.value<std::string>(), std::string("a"));
+    }
+
+    void test_Issue445_inline_str_streaming_read()
+    {
+        xlnt::streaming_workbook_reader wbr;
+        wbr.open(path_helper::test_file("Issue445_inline_str.xlsx"));
+        wbr.begin_worksheet("Sheet");
+        xlnt_assert(wbr.has_cell());
+        auto cell = wbr.read_cell();
+        xlnt_assert_equals(cell.value<std::string>(), std::string("a"));
+    }
+
+    void test_Issue492_stream_empty_row()
+    {
+        xlnt::streaming_workbook_reader wbr;
+        wbr.open(path_helper::test_file("Issue492_empty_row.xlsx"));
+        wbr.begin_worksheet("BLS Data Series");
+        xlnt_assert(wbr.has_cell());
+        xlnt_assert_equals(wbr.read_cell().reference(), "A1");
+        xlnt_assert(wbr.has_cell());
+        xlnt_assert_equals(wbr.read_cell().reference(), "A2");
+        xlnt_assert(wbr.has_cell());
+        xlnt_assert_equals(wbr.read_cell().reference(), "A4");
+        xlnt_assert(wbr.has_cell());
+        xlnt_assert_equals(wbr.read_cell().reference(), "B4");
+        xlnt_assert(!wbr.has_cell());
+    }
+
+    void test_Issue503_external_link_load()
+    {
+        xlnt::workbook wb;
+        wb.load(path_helper::test_file("Issue503_external_link.xlsx"));
+        auto ws = wb.active_sheet();
+        auto cell = ws.cell("A1");
+        xlnt_assert_equals(cell.value<std::string>(), std::string("WDG_IC_00000003.aut"));
+    }
+    
+    void test_formatting()
+    {
+        xlnt::workbook wb;
+        wb.load(path_helper::test_file("excel_test_sheet.xlsx"));
+        auto ws = wb.active_sheet();
+        auto cell = ws.cell("A1");
+        
+        xlnt_assert_equals(cell.value<std::string>(), std::string("Bolder Text mixed with normal \ntext first line Bold And Underline"));
+        
+        auto rt = cell.value<xlnt::rich_text>();
+        xlnt_assert_equals(rt.runs().size(), 12);
+        
+        auto assert_run = [](xlnt::rich_text_run run, std::string text, std::string typeface, xlnt::color color, std::size_t size, bool bold, bool strike, xlnt::font::underline_style underline)
+        {
+            xlnt_assert_equals(run.first, text);
+            xlnt_assert(run.second.is_set());
+            auto font = run.second.get();
+            xlnt_assert_equals(font.name(), typeface);
+            xlnt_assert_equals(font.size(), size);
+            xlnt_assert_equals(font.bold(), bold);
+            xlnt_assert_equals(font.color(), color);
+            xlnt_assert_equals(font.strikethrough(), strike);
+            xlnt_assert_equals(font.underline(), underline);
+        };
+        
+        assert_run(rt.runs()[0], "Bolder", "Calibri (Body)", xlnt::theme_color(1), 12, true, false, xlnt::font::underline_style::none);
+        assert_run(rt.runs()[1], " Text ", "Calibri", xlnt::theme_color(1), 12, true, false, xlnt::font::underline_style::none);
+        assert_run(rt.runs()[2], "mixed ", "Calibri", xlnt::color::red(), 12, false, false, xlnt::font::underline_style::none);
+        assert_run(rt.runs()[3], "wit", "Calibri (Body)", xlnt::color::red(), 12, false, false, xlnt::font::underline_style::single);
+        assert_run(rt.runs()[4], "h", "Calibri", xlnt::color::red(), 12, false, false, xlnt::font::underline_style::single);
+        assert_run(rt.runs()[5], " ", "Calibri", xlnt::color::red(), 12, false, false, xlnt::font::underline_style::none);
+        assert_run(rt.runs()[6], "normal", "Calibri (Body)", xlnt::color::red(), 12, false, false, xlnt::font::underline_style::none);
+        assert_run(rt.runs()[7], " ", "Calibri", xlnt::color::red(), 12, false, false, xlnt::font::underline_style::none);
+        assert_run(rt.runs()[8], "\n", "Calibri", xlnt::theme_color(1), 12, false, false, xlnt::font::underline_style::none);
+        assert_run(rt.runs()[9], "text", "Helvetica Neue", xlnt::theme_color(1), 12, false, true, xlnt::font::underline_style::none);
+        assert_run(rt.runs()[10], " first line ", "Calibri", xlnt::theme_color(1), 12, true, false, xlnt::font::underline_style::none);
+        assert_run(rt.runs()[11], "Bold And Underline", "Calibri (Body)", xlnt::theme_color(1), 12, true, false, xlnt::font::underline_style::single);
+    }
 };
+
 static serialization_test_suite x;

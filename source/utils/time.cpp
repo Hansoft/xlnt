@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Thomas Fussell
+// Copyright (c) 2014-2020 Thomas Fussell
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -117,9 +117,8 @@ double time::to_number() const
     microseconds += static_cast<std::uint64_t>(minute * 1e6 * 60);
     auto microseconds_per_hour = static_cast<std::uint64_t>(1e6) * 60 * 60;
     microseconds += static_cast<std::uint64_t>(hour) * microseconds_per_hour;
-    auto number = microseconds / (24.0 * microseconds_per_hour);
-    auto hundred_billion = static_cast<std::uint64_t>(1e9) * 100;
-    number = std::floor(number * hundred_billion + 0.5) / hundred_billion;
+    auto number = static_cast<double>(microseconds) / (24.0 * static_cast<double>(microseconds_per_hour));
+    number = std::floor(number * 100e9 + 0.5) / 100e9;
 
     return number;
 }
