@@ -1,0 +1,9 @@
+%Repository "xlnt-libstudxml"
+{
+	Repository
+	{
+		Location "@('./third-party/libstudxml'->MakeAbsolute())"
+		Type "External"
+		URL "https://git.codesynthesis.com/libstudxml/libstudxml.git"
+	}
+}
