@@ -26,3 +26,4 @@ python/xlntpyarrow.egg-info/
 /CMakeSettings.json
 include/xlnt/utils/xlnt_cmake_export.h
 .idea/
+/External.MRepoState
