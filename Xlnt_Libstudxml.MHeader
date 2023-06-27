@@ -2,9 +2,9 @@
 {
 	Repository
 	{
-		DefaultBranch "master"
-		Location "third-party/libstudxml"->MakeAbsolute()
 		Type "External"
-		URL "https://git.codesynthesis.com/libstudxml/libstudxml.git"
+		Location "third-party/libstudxml"->MakeAbsolute()
+		URL `https://@((HansoftGitHubUserName != "") ? (`@(HansoftGitHubUserName)@@`) : "")github.com/Hansoft/libstudxml.git`
+		Remotes =+ {Name: "upstream", URL: "https://git.codesynthesis.com/libstudxml/libstudxml.git"}
 	}
 }
