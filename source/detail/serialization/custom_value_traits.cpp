@@ -136,39 +136,39 @@ std::string to_string(pattern_fill_type fill_type)
     switch (fill_type)
     {
     case pattern_fill_type::darkdown:
-        return "darkdown";
+        return "darkDown";
     case pattern_fill_type::darkgray:
-        return "darkgray";
+        return "darkGray";
     case pattern_fill_type::darkgrid:
-        return "darkgrid";
+        return "darkGrid";
     case pattern_fill_type::darkhorizontal:
-        return "darkhorizontal";
+        return "darkHorizontal";
     case pattern_fill_type::darktrellis:
-        return "darkhorizontal";
+        return "darkTrellis";
     case pattern_fill_type::darkup:
-        return "darkup";
+        return "darkUp";
     case pattern_fill_type::darkvertical:
-        return "darkvertical";
+        return "darkVertical";
     case pattern_fill_type::gray0625:
         return "gray0625";
     case pattern_fill_type::gray125:
         return "gray125";
     case pattern_fill_type::lightdown:
-        return "lightdown";
+        return "lightDown";
     case pattern_fill_type::lightgray:
-        return "lightgray";
+        return "lightGray";
     case pattern_fill_type::lightgrid:
-        return "lightgrid";
+        return "lightGrid";
     case pattern_fill_type::lighthorizontal:
-        return "lighthorizontal";
+        return "lightHorizontal";
     case pattern_fill_type::lighttrellis:
-        return "lighttrellis";
+        return "lightTrellis";
     case pattern_fill_type::lightup:
-        return "lightup";
+        return "lightUp";
     case pattern_fill_type::lightvertical:
-        return "lightvertical";
+        return "lightVertical";
     case pattern_fill_type::mediumgray:
-        return "mediumgray";
+        return "mediumGray";
     case pattern_fill_type::solid:
         return "solid";
     case pattern_fill_type::none:
