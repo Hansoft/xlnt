@@ -216,6 +216,8 @@ endif()
 #target_compile_features(xlnt PUBLIC c_std_${XLNT_C_LANG})
 
 # Includes
+set(XLNT_FMT_INCLUDE_DIR "${XLNT_SOURCE_DIR}/../third-party/fmt/include" CACHE PATH "Directory containing the {fmt} headers (fmt/format.h)")
+
 target_include_directories(xlnt
 	PUBLIC
 	$<BUILD_INTERFACE:${XLNT_INCLUDE_DIR}>
@@ -225,7 +227,7 @@ target_include_directories(xlnt
 	${XLNT_SOURCE_DIR}/../third-party/libstudxml
     ${XLNT_SOURCE_DIR}/../third-party/miniz
     ${XLNT_SOURCE_DIR}/../third-party/utfcpp/source
-    ${XLNT_SOURCE_DIR}/../third-party/fmt/include
+    ${XLNT_FMT_INCLUDE_DIR}
     ${XLNT_SOURCE_DIR}/../third-party/fast_float/include)
 
 # Platform- and file-specific settings, MSVC
