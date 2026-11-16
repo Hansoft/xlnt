@@ -42,7 +42,7 @@
 #include <xlnt/worksheet/print_options.hpp>
 #include <xlnt/worksheet/sheet_pr.hpp>
 #include <detail/implementations/cell_impl.hpp>
-#include <detail/implementations/workbook_impl.hpp>
+#include <xlnt/workbook/workbook.hpp>
 
 namespace xlnt {
 
@@ -170,3 +170,6 @@ struct worksheet_impl
 
 } // namespace detail
 } // namespace xlnt
+
+// After worksheet_impl is complete: workbook_impl stores worksheet_impl in a std::list, which libc++ instantiates with its inline members
+#include <detail/implementations/workbook_impl.hpp>
